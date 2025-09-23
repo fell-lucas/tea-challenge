@@ -22,11 +22,7 @@ show_help() {
     echo "Commands:"
     echo "  start       Start development environment"
     echo "  start:prod  Start production environment"
-    echo "  logs        Show service logs"
     echo "  clean       Clean up Docker resources"
-    echo "  db-seed     Seed database with sample data"
-    echo "  db-reset    Reset database"
-    echo "  status      Show service status"
     echo "  help        Show this help message"
 }
 
@@ -62,11 +58,6 @@ start_prod() {
     print_color $BLUE "🚀 Services available at:"
     print_color $BLUE "   • API: http://localhost:3000/api/v1"
     print_color $BLUE "   • Health Check: http://localhost:3000/api/v1/health"
-}
-
-show_logs() {
-    print_color $BLUE "📋 Showing logs (Ctrl+C to exit)..."
-    docker compose logs -f
 }
 
 clean_docker() {
@@ -126,26 +117,6 @@ clean_docker() {
     print_color $YELLOW "ℹ️  Other Docker projects were left untouched"
 }
 
-seed_database() {
-    print_color $BLUE "🌱 Seeding database..."
-    docker compose restart mongodb
-    print_color $GREEN "✅ Database seeded"
-}
-
-reset_database() {
-    print_color $YELLOW "🗑️  Resetting database..."
-    docker compose down mongodb
-    docker volume rm tea-challenge_mongodb_data 2>/dev/null || true
-    docker volume rm tea-challenge_mongodb_config 2>/dev/null || true
-    docker compose up -d mongodb
-    print_color $GREEN "✅ Database reset"
-}
-
-show_status() {
-    print_color $BLUE "📊 Service Status:"
-    docker compose ps
-}
-
 main() {
     case "${1:-help}" in
         start)
@@ -154,20 +125,8 @@ main() {
         start:prod)
             start_prod
             ;;
-        logs)
-            show_logs
-            ;;
         clean)
             clean_docker
-            ;;
-        db-seed)
-            seed_database
-            ;;
-        db-reset)
-            reset_database
-            ;;
-        status)
-            show_status
             ;;
         help|*)
             show_help
