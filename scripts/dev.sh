@@ -30,7 +30,6 @@ show_help() {
     echo "  help        Show this help message"
 }
 
-# Check if .env exists
 pre_start() {
     if [ ! -f .env ]; then
         print_color $RED "❌ .env file not found. Please create one from .env.example."
@@ -40,17 +39,23 @@ pre_start() {
 
 start_dev() {
     pre_start
-    print_color $GREEN "🧪 Starting development environment..."
+    print_color $BLUE "🧹 Cleaning up production containers..."
+    docker compose -f docker-compose.prod.yml down 2>/dev/null || true
+    docker rmi tea-challenge-api 2>/dev/null || true
 
+    print_color $GREEN "🧪 Starting development environment..."
     docker compose up -d
 
-    # Follow logs from API container only
     print_color $BLUE "📋 Following API logs (Ctrl+C to stop)..."
     docker compose logs -f api
 }
 
 start_prod() {
     pre_start
+    print_color $BLUE "🧹 Cleaning up development containers..."
+    docker compose -f docker-compose.yml down 2>/dev/null || true
+    docker rmi tea-challenge-api 2>/dev/null || true
+
     print_color $GREEN "🚀 Starting production environment..."
     docker compose -f docker-compose.prod.yml up -d
     print_color $GREEN "✅ Production environment started"
@@ -87,9 +92,8 @@ clean_docker() {
         fi
     done
 
-    # Remove project service images
     print_color $BLUE "🐳 Removing project service images..."
-    project_images="redis:7.2-alpine mongo:7.0 mongo-express:1.0.2 rediscommander/redis-commander:latest"
+    project_images="redis:8-alpine mongo:8-noble mongo-express:latest rediscommander/redis-commander:latest"
     for image in $project_images; do
         if docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "^${image}$"; then
             echo "  Removing service image: $image"
