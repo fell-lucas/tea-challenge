@@ -62,7 +62,7 @@ Slimmed down production image with only production dependencies, no db/redis man
 ## Current endpoints
 
 | State | Endpoint | Method | Description |
-|----------|--------|-------------|
+|--------|---------|--------|-------------|
 | ✅ | /api/v1/posts | POST | Create new post (requires X-User-Id header) |
 | ✅ | /api/v1/feed | GET | Main feed endpoint with cursor-based pagination and category filtering (open access) |
 | ⌛️ | /api/v1/posts/{id}/like | PUT | Like post (requires X-User-Id header) |
