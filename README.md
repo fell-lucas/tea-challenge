@@ -68,7 +68,7 @@ Slimmed down production image with only production dependencies, no db/redis man
 | ⌛️ | /api/v1/posts/{id}/like | PUT | Like post (requires X-User-Id header) |
 | ⌛️ | /api/v1/posts/{id}/dislike | PUT | Dislike post (requires X-User-Id header) |
 | ⌛️ | /api/v1/posts/{id} | GET | Get single post details (open access) |
-| ⌛️ | /api/v1/categories | GET | Get all categories |
+| ⌛️ | /api/v1/categories | GET | Get all categories (open access) |
 
 ## Technical Choices and Trade-offs
 
