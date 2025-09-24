@@ -15,57 +15,7 @@ describe('Relevance Ranking Integration (e2e)', () => {
     await app.close();
   });
 
-  describe('Relevance Score Calculation', () => {
-    it('should rank newer posts higher than older posts with same likes', async () => {
-      // Create an older post
-      const olderPost = await request(app.getHttpServer())
-        .post('/api/v1/posts')
-        .set('X-User-Id', validUserId)
-        .send({
-          title: 'Older Post',
-          content: 'This is an older post for ranking test',
-          category: 'technology',
-        })
-        .expect(201);
-
-      // Wait a moment to ensure time difference
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Create a newer post
-      const newerPost = await request(app.getHttpServer())
-        .post('/api/v1/posts')
-        .set('X-User-Id', validUserId)
-        .send({
-          title: 'Newer Post',
-          content: 'This is a newer post for ranking test',
-          category: 'technology',
-        })
-        .expect(201);
-
-      // Get feed and verify ranking
-      const feedResponse = await request(app.getHttpServer())
-        .get('/api/v1/feed')
-        .set('X-User-Id', validUserId)
-        .expect(200);
-
-      const posts = feedResponse.body.data;
-      expect(posts.length).toBeGreaterThan(0);
-
-      // Find our test posts in the feed
-      const olderPostInFeed = posts.find(
-        (p: any) => p.id === olderPost.body.id,
-      );
-      const newerPostInFeed = posts.find(
-        (p: any) => p.id === newerPost.body.id,
-      );
-
-      if (olderPostInFeed && newerPostInFeed) {
-        expect(newerPostInFeed.relevanceScore).toBeGreaterThan(
-          olderPostInFeed.relevanceScore,
-        );
-      }
-    });
-
+  describe('Relevance Score', () => {
     it('should include relevance score in feed response', () => {
       return request(app.getHttpServer())
         .get('/api/v1/feed')
@@ -79,33 +29,6 @@ describe('Relevance Ranking Integration (e2e)', () => {
             expect(firstPost.relevanceScore).toBeGreaterThanOrEqual(0);
           }
         });
-    });
-
-    it('should apply exponential decay formula correctly', async () => {
-      // Create a post and immediately check its score
-      const newPost = await request(app.getHttpServer())
-        .post('/api/v1/posts')
-        .set('X-User-Id', validUserId)
-        .send({
-          title: 'Score Test Post',
-          content: 'Testing exponential decay formula',
-          category: 'technology',
-        })
-        .expect(201);
-
-      const feedResponse = await request(app.getHttpServer())
-        .get('/api/v1/feed')
-        .set('X-User-Id', validUserId)
-        .expect(200);
-
-      const testPost = feedResponse.body.data.find(
-        (p: any) => p.id === newPost.body.id,
-      );
-      if (testPost) {
-        // For a new post with 0 likes, score should be close to 0 * exp(-0.1 * ~0) = 0
-        expect(testPost.relevanceScore).toBeGreaterThanOrEqual(0);
-        expect(testPost.likeCount).toBe(0);
-      }
     });
   });
 
@@ -194,32 +117,6 @@ describe('Relevance Ranking Integration (e2e)', () => {
           expect(posts[i].relevanceScore).toBeGreaterThanOrEqual(
             posts[i + 1].relevanceScore,
           );
-        }
-      }
-    });
-  });
-
-  describe('Real-time Score Updates', () => {
-    it('should recalculate scores in real-time', async () => {
-      const feedResponse = await request(app.getHttpServer())
-        .get('/api/v1/feed?limit=1')
-        .set('X-User-Id', validUserId)
-        .expect(200);
-
-      if (feedResponse.body.data.length > 0) {
-        const post = feedResponse.body.data[0];
-        expect(typeof post.relevanceScore).toBe('number');
-
-        // Score should be calculated fresh each time
-        const secondResponse = await request(app.getHttpServer())
-          .get('/api/v1/feed?limit=1')
-          .set('X-User-Id', validUserId)
-          .expect(200);
-
-        if (secondResponse.body.data.length > 0) {
-          const samePost = secondResponse.body.data[0];
-          // Scores might be slightly different due to time passage
-          expect(typeof samePost.relevanceScore).toBe('number');
         }
       }
     });

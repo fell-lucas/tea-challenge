@@ -16,7 +16,12 @@ describe('Posts API (e2e)', () => {
   });
 
   describe('POST /api/v1/posts', () => {
-    const validPostData = {
+    const validPostData: {
+      title?: string;
+      content?: string;
+      category: string;
+      tags?: string[];
+    } = {
       title: 'Test Post for Feed Ranking',
       content:
         'This is a test post to verify the feed ranking algorithm works correctly.',
