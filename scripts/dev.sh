@@ -22,6 +22,7 @@ show_help() {
     echo "Commands:"
     echo "  start       Start development environment"
     echo "  start:prod  Start production environment"
+    echo "  services    Start only MongoDB and Redis services (for local dev/testing)"
     echo "  clean       Clean up Docker resources"
     echo "  help        Show this help message"
 }
@@ -58,6 +59,42 @@ start_prod() {
     print_color $BLUE "🚀 Services available at:"
     print_color $BLUE "   • API: http://localhost:3000/api/v1"
     print_color $BLUE "   • Health Check: http://localhost:3000/api/v1/health"
+}
+
+start_services_only() {
+    print_color $GREEN "🗄️  Starting MongoDB and Redis services only..."
+
+    docker compose -f docker-compose.yml up -d mongodb redis
+
+    # Wait for services to be healthy
+    print_color $BLUE "⏳ Waiting for services to be healthy..."
+
+    local max_attempts=30
+    local attempt=1
+
+    while [ $attempt -le $max_attempts ]; do
+        local mongodb_healthy=$(docker compose -f docker-compose.yml ps mongodb --format json | grep -o '"Health":"[^"]*"' | cut -d'"' -f4)
+        local redis_healthy=$(docker compose -f docker-compose.yml ps redis --format json | grep -o '"Health":"[^"]*"' | cut -d'"' -f4)
+
+        if [ "$mongodb_healthy" = "healthy" ] && [ "$redis_healthy" = "healthy" ]; then
+            print_color $GREEN "✅ All services are healthy!"
+            break
+        fi
+
+        echo -n "."
+        sleep 1
+        attempt=$((attempt + 1))
+
+        if [ $attempt -gt $max_attempts ]; then
+            print_color $YELLOW "⚠️  Services may still be starting. Check status with: docker compose -f docker-compose.yml ps"
+            break
+        fi
+    done
+
+    print_color $BLUE "🚀 Services available at:"
+    print_color $BLUE "   • MongoDB: mongodb://admin:password@127.0.0.1:27017"
+    print_color $BLUE "   • Redis: redis://127.0.0.1:6379"
+    print_color $BLUE ""
 }
 
 clean_docker() {
@@ -124,6 +161,9 @@ main() {
             ;;
         start:prod)
             start_prod
+            ;;
+        services)
+            start_services_only
             ;;
         clean)
             clean_docker

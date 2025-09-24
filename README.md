@@ -15,13 +15,6 @@ A NestJS-based relevance feed backend API with MongoDB and Redis integration, co
 - **Data Validation**: Request/response validation with class-validator
 - **CORS Support**: Cross-origin resource sharing configuration
 
-## 📋 Prerequisites
-
-- **Node.js** (>= 20.0.0)
-- **pnpm** (>= 10.0.0)
-- **Docker** (>= 20.10.0)
-- **Docker Compose** (>= 2.0.0)
-
 ## 🛠️ Installation & Development Setup
 
 Clone the repository
@@ -39,6 +32,9 @@ chmod +x scripts/dev.sh
 ```
 
 Edit and save files and see the service running in the container restart automatically.
+
+Seed the database with `pnpm re-seed`
+Run e2e tests with `pnpm test:e2e`
 
 ## 🚀 Production
 

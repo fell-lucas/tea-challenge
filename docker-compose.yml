@@ -52,7 +52,6 @@ services:
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
-      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
       - tea-challenge-network
     restart: unless-stopped
@@ -68,30 +67,14 @@ services:
     container_name: tea-challenge-redis
     ports:
       - "${REDIS_PORT:-6379}:6379"
-    command: >
-      sh -c "
-      if [ -n \"$$REDIS_PASSWORD\" ]; then
-        redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\"
-      else
-        redis-server --appendonly yes
-      fi
-      "
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
     networks:
       - tea-challenge-network
     restart: unless-stopped
     healthcheck:
-      test: >
-        sh -c "
-        if [ -n \"$$REDIS_PASSWORD\" ]; then
-          redis-cli -a \"$$REDIS_PASSWORD\" ping
-        else
-          redis-cli ping
-        fi
-        "
+      test: redis-cli ping
       interval: 10s
       timeout: 5s
       retries: 5
@@ -123,7 +106,6 @@ services:
       - "${REDIS_COMMANDER_PORT:-8082}:8081"
     environment:
       - REDIS_HOSTS=local:redis:6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
     depends_on:
       redis:
         condition: service_healthy
