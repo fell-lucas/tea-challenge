@@ -14,6 +14,7 @@ A NestJS-based relevance feed backend API with MongoDB and Redis integration, co
 - Like distribution (when seeding)
 - Cursor-based pagination based on post score + post ID
 - Health checks
+- Docker Compose for local development, testing, and slimmed down production image
 - Automated CI/CD pipeline with GitHub Actions
 
 ## 🛠️ Installation & Development Setup
@@ -21,11 +22,11 @@ A NestJS-based relevance feed backend API with MongoDB and Redis integration, co
 Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone git@github.com:fell-lucas/tea-challenge.git
 cd tea-challenge
 ```
 
-Use the automated script:
+Use the automated script to start MongoDB, Redis and the API:
 
 ```bash
 chmod +x scripts/dev.sh
@@ -34,7 +35,11 @@ chmod +x scripts/dev.sh
 
 Edit and save files and see the service running in the container restart automatically.
 
-Seed the database with `pnpm re-seed`
+Seed the database with `pnpm re-seed` or through the API via Swagger UI at http://localhost:3000/docs
+
+I recommend using Swagger to play with the API and its various endpoints. Everything is fully documented in the Swagger UI.
+
+Run tests with `pnpm test`
 Run e2e tests with `pnpm test:e2e`
 
 ## 🚀 Production
@@ -60,7 +65,7 @@ Slimmed down production image with only production dependencies, no db/redis man
 | **Swagger UI** | 3000/docs | API documentation (only in dev) |
 
 
-## Current endpoints
+## Endpoints
 
 | Endpoint | Method | Description |
 |---------|--------|-------------|
