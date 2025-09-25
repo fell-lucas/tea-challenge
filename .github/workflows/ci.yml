@@ -8,10 +8,9 @@ on:
 
 jobs:
   test:
-    name: Test with Service Containers
+    name: Test
     runs-on: ubuntu-latest
 
-    # Service containers for MongoDB and Redis
     services:
       mongodb:
         image: mongo:8-noble
@@ -59,13 +58,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.0.0'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "20.0.0"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: '10.17.1'
           run_install: false
 
       - name: Get pnpm store directory
@@ -88,10 +86,10 @@ jobs:
         run: |
           echo "Verifying MongoDB connection..."
           timeout 60 bash -c 'until mongosh --host 127.0.0.1:27017 --username admin --password password --authenticationDatabase admin --eval "db.adminCommand(\"ping\")" > /dev/null 2>&1; do sleep 2; done'
-          
+
           echo "Verifying Redis connection..."
           timeout 60 bash -c 'until redis-cli -h 127.0.0.1 -p 6379 ping > /dev/null 2>&1; do sleep 2; done'
-          
+
           echo "✅ All services are ready!"
 
       - name: Build application
@@ -122,13 +120,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.0.0'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "20.0.0"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: '10.17.1'
           run_install: false
 
       - name: Get pnpm store directory
