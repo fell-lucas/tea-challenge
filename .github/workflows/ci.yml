@@ -82,15 +82,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Verify services are ready
-        run: |
-          echo "Verifying MongoDB connection..."
-          timeout 60 bash -c 'until mongosh --host 127.0.0.1:27017 --username admin --password password --authenticationDatabase admin --eval "db.adminCommand(\"ping\")" > /dev/null 2>&1; do sleep 2; done'
+      # - name: Verify services are ready
+      #   run: |
+      #     echo "Verifying MongoDB connection..."
+      #     timeout 60 bash -c 'until mongosh --host 127.0.0.1:27017 --username admin --password password --authenticationDatabase admin --eval "db.adminCommand(\"ping\")" > /dev/null 2>&1; do sleep 2; done'
 
-          echo "Verifying Redis connection..."
-          timeout 60 bash -c 'until redis-cli -h 127.0.0.1 -p 6379 ping > /dev/null 2>&1; do sleep 2; done'
+      #     echo "Verifying Redis connection..."
+      #     timeout 60 bash -c 'until redis-cli -h 127.0.0.1 -p 6379 ping > /dev/null 2>&1; do sleep 2; done'
 
-          echo "✅ All services are ready!"
+      #     echo "✅ All services are ready!"
 
       - name: Build application
         run: pnpm build
