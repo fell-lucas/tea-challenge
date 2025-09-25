@@ -322,7 +322,8 @@ describe('FeedService', () => {
       const query: FeedQueryDto = { limit: 10 };
       const result = await service.getFeed(query);
 
-      expect(postService.findAll).not.toHaveBeenCalled();
+      const mockedFindAll = jest.mocked(postService['findAll']);
+      expect(mockedFindAll).not.toHaveBeenCalled();
       expect(result.meta.cacheHit).toBe(true);
       expect(result.data).toHaveLength(1);
     });
@@ -339,7 +340,8 @@ describe('FeedService', () => {
       const query: FeedQueryDto = { category: 'technology', limit: 10 };
       await service.getFeed(query);
 
-      expect(cacheService.set).toHaveBeenCalledWith(
+      const mockedCacheSet = jest.mocked(cacheService['set']);
+      expect(mockedCacheSet).toHaveBeenCalledWith(
         'posts:technology:raw',
         { posts: mockPosts, totalCount: 1 },
         900, // 15 minutes for category-specific cache
@@ -351,7 +353,7 @@ describe('FeedService', () => {
     it('should handle posts with null/undefined createdAt', () => {
       const post = createMockPost({
         likeCount: 100,
-        createdAt: null as any,
+        createdAt: null as unknown as Date,
       });
 
       // Should not throw an error, but may return NaN or unexpected value
