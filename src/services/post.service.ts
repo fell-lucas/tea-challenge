@@ -1,10 +1,21 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Post, PostDocument } from '../entities/post.entity';
 import { CreatePostDto } from '../dto/create-post.dto';
 import { UserService } from './user.service';
 import { CategoryService } from './category.service';
+import { EngagementService } from './engagement.service';
+import {
+  PostDetailsDto,
+  EngagementMetricsDto,
+} from '../dto/post-details-response.dto';
+import { EngagementType } from '../entities/user-engagement.entity';
 
 @Injectable()
 export class PostService {
@@ -14,12 +25,13 @@ export class PostService {
     @InjectModel(Post.name) private postModel: Model<PostDocument>,
     private userService: UserService,
     private categoryService: CategoryService,
+    private engagementService: EngagementService,
   ) {}
 
   async create(
     createPostDto: CreatePostDto,
     userId: string,
-  ): Promise<PostDocument> {
+  ): Promise<PostDetailsDto> {
     try {
       await this.userService.findOrCreateUser(userId);
 
@@ -39,7 +51,26 @@ export class PostService {
       ]);
 
       this.logger.log(`Created post ${savedPost._id} for user ${userId}`);
-      return savedPost;
+
+      const postDetails: PostDetailsDto = {
+        id: post._id.toString(),
+        title: post.title,
+        content: post.content,
+        userId: post.userId,
+        category: post.category,
+        createdAt: post.createdAt.toISOString(),
+        updatedAt: post.updatedAt.toISOString(),
+        relevanceScore: post.relevanceScore,
+        engagement: {
+          likeCount: 0,
+          dislikeCount: 0,
+          userEngagement: null,
+        },
+        tags: post.tags,
+        isActive: post.isActive,
+      };
+
+      return postDetails;
     } catch (error) {
       this.logger.error('Error creating post:', error);
       throw error;
@@ -60,14 +91,14 @@ export class PostService {
 
       const totalCount = await this.postModel.countDocuments(filter);
 
-      // Build query for cursor pagination
       let query = this.postModel.find(filter);
 
       if (cursor) {
         // For cursor pagination, we need to filter based on relevance score and creation time
         // Since relevance score is calculated, we'll use creation time and like count as proxy
+        const HOUR_IN_MS = 1000 * 60 * 60;
         const cursorDate = new Date(
-          Date.now() - (Math.log(cursor.score) / -0.1) * 60 * 60 * 1000,
+          Date.now() - (Math.log(cursor.score) / -0.1) * HOUR_IN_MS,
         );
         query = query.where({
           $or: [
@@ -92,43 +123,6 @@ export class PostService {
     }
   }
 
-  async findById(id: string): Promise<PostDocument | null> {
-    try {
-      return await this.postModel.findOne({ _id: id, isActive: true });
-    } catch (error) {
-      this.logger.error(`Error finding post ${id}:`, error);
-      throw error;
-    }
-  }
-
-  async findByUserId(
-    userId: string,
-    limit: number = 10,
-  ): Promise<PostDocument[]> {
-    try {
-      return await this.postModel
-        .find({ userId, isActive: true })
-        .sort({ createdAt: -1 })
-        .limit(limit);
-    } catch (error) {
-      this.logger.error(`Error finding posts for user ${userId}:`, error);
-      throw error;
-    }
-  }
-
-  async incrementLikes(id: string): Promise<PostDocument | null> {
-    try {
-      return await this.postModel.findByIdAndUpdate(
-        id,
-        { $inc: { likeCount: 1 } },
-        { new: true },
-      );
-    } catch (error) {
-      this.logger.error(`Error incrementing likes for post ${id}:`, error);
-      throw error;
-    }
-  }
-
   async setLikeCount(
     id: string,
     likeCount: number,
@@ -145,26 +139,6 @@ export class PostService {
     }
   }
 
-  async delete(id: string): Promise<void> {
-    try {
-      const post = await this.postModel.findById(id);
-      if (post) {
-        await this.postModel.updateOne({ _id: id }, { isActive: false });
-
-        // Update counters
-        await Promise.all([
-          this.userService.decrementPostCount(post.userId),
-          this.categoryService.decrementPostCount(post.category),
-        ]);
-
-        this.logger.log(`Soft deleted post ${id}`);
-      }
-    } catch (error) {
-      this.logger.error(`Error deleting post ${id}:`, error);
-      throw error;
-    }
-  }
-
   async clearAllPosts(): Promise<void> {
     try {
       await this.postModel.deleteMany({});
@@ -175,15 +149,57 @@ export class PostService {
     }
   }
 
-  async getPostCount(category?: string): Promise<number> {
+  async getPostDetails(
+    postId: string,
+    userId?: string,
+  ): Promise<PostDetailsDto> {
     try {
-      const filter: any = { isActive: true };
-      if (category) {
-        filter.category = category;
+      if (!Types.ObjectId.isValid(postId)) {
+        throw new BadRequestException('Invalid post ID format');
       }
-      return await this.postModel.countDocuments(filter);
+
+      const post = await this.postModel.findById(postId).exec();
+      if (!post) {
+        throw new NotFoundException('Post not found');
+      }
+
+      const engagementMetrics =
+        await this.engagementService.getEngagementMetrics(postId);
+
+      let userEngagement: EngagementType | null = null;
+      if (userId) {
+        userEngagement = await this.engagementService.getUserEngagement(
+          userId,
+          postId,
+        );
+      }
+
+      const engagement: EngagementMetricsDto = {
+        likeCount: engagementMetrics.likeCount,
+        dislikeCount: engagementMetrics.dislikeCount,
+        userEngagement,
+      };
+
+      const postDetails: PostDetailsDto = {
+        id: post._id.toString(),
+        title: post.title,
+        content: post.content,
+        userId: post.userId,
+        category: post.category,
+        createdAt: post.createdAt.toISOString(),
+        updatedAt: post.updatedAt.toISOString(),
+        relevanceScore: post.relevanceScore,
+        engagement,
+        tags: post.tags,
+        isActive: post.isActive,
+      };
+
+      this.logger.log(
+        `Retrieved post details for ${postId}${userId ? ` (user: ${userId})` : ' (anonymous)'}`,
+      );
+      return postDetails;
     } catch (error) {
-      this.logger.error('Error getting post count:', error);
+      this.logger.error(`Error getting post details for ${postId}:`, error);
       throw error;
     }
   }

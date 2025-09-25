@@ -32,9 +32,10 @@ export const modifyApp = (app: INestApplication) => {
 };
 
 async function bootstrap() {
+  const logger = new ConsoleLogger({ prefix: 'Tea Challenge' });
   const app = modifyApp(
     await NestFactory.create(AppModule, {
-      logger: new ConsoleLogger({ prefix: 'Tea Challenge' }),
+      logger,
     }),
   );
 
@@ -54,7 +55,8 @@ async function bootstrap() {
           type: 'apiKey',
           name: 'X-User-Id',
           in: 'header',
-          description: 'User identifier (UUID v7 format)',
+          description:
+            'User identifier (UUID v7 format). Example: 01234567-89ab-7def-8123-456789abcdef',
         },
         'X-User-Id',
       )
@@ -74,15 +76,15 @@ async function bootstrap() {
     return;
   }
 
-  console.log('\n📍 Services available at:');
-  console.log(`   • API: http://localhost:${port}/api/v1`);
-  console.log(`   • Health Check: http://localhost:${port}/api/v1/health`);
+  logger.log('📍 Services available at:');
+  logger.log(`   • API: http://localhost:${port}/api/v1`);
+  logger.log(`   • Health Check: http://localhost:${port}/api/v1/health`);
 
   if (process.env.NODE_ENV === 'development') {
-    console.log(`   • API Documentation: http://localhost:${port}/docs`);
-    console.log('\n🔧 Management Tools:');
-    console.log('   • Mongo Express: http://localhost:8081 (U:admin P:pass)');
-    console.log('   • Redis Commander: http://localhost:8082');
+    logger.log(`   • API Documentation: http://localhost:${port}/docs`);
+    logger.log('🔧 Management Tools:');
+    logger.log('   • Mongo Express: http://localhost:8081 (U:admin P:pass)');
+    logger.log('   • Redis Commander: http://localhost:8082');
   }
 }
 

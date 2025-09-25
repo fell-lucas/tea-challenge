@@ -1,6 +1,7 @@
 import { Controller, Post, Logger, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SeedingService } from '../services/seeding.service';
+import { SeedResponseDto } from '../dto/seed-response.dto';
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -18,6 +19,7 @@ export class SeedController {
   @ApiResponse({
     status: 200,
     description: 'Database seeded successfully',
+    type: SeedResponseDto,
   })
   @ApiResponse({
     status: 500,
@@ -34,9 +36,8 @@ export class SeedController {
       );
 
       return {
-        message: 'Database seeded successfully',
-        ...result,
-        timestamp: new Date().toISOString(),
+        success: true,
+        data: result,
       };
     } catch (error) {
       this.logger.error('Database seeding failed:', error);

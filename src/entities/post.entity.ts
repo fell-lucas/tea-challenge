@@ -43,6 +43,12 @@ export class Post {
   @Prop({ default: 0, min: 0 })
   likeCount!: number;
 
+  @Prop({ default: 0, min: 0 })
+  dislikeCount!: number;
+
+  @Prop({ default: () => new Date() })
+  engagementUpdatedAt!: Date;
+
   @Prop({ type: [String], default: [] })
   tags?: string[];
 
@@ -68,6 +74,7 @@ PostSchema.index({ category: 1, createdAt: -1, likeCount: -1 });
 PostSchema.index({ createdAt: -1, likeCount: -1 });
 PostSchema.index({ userId: 1, createdAt: -1 });
 PostSchema.index({ isActive: 1 });
+PostSchema.index({ _id: 1, likeCount: -1, dislikeCount: -1 });
 
 // Add virtual for relevance score
 PostSchema.virtual('relevanceScore').get(function () {

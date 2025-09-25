@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { getAppForTesting } from './setup-tests';
+import { getAppForTesting } from '../../../../setup-tests';
 
 /**
  * This test is skipped normally because the database is shared between all tests.

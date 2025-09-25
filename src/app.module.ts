@@ -14,6 +14,10 @@ import { RateLimitMiddleware } from './middleware/rate-limit.middleware';
 import { Post, PostSchema } from './entities/post.entity';
 import { User, UserSchema } from './entities/user.entity';
 import { Category, CategorySchema } from './entities/category.entity';
+import {
+  UserEngagement,
+  UserEngagementSchema,
+} from './entities/user-engagement.entity';
 
 import { PostService } from './services/post.service';
 import { UserService } from './services/user.service';
@@ -21,11 +25,14 @@ import { CategoryService } from './services/category.service';
 import { FeedService } from './services/feed.service';
 import { CacheService } from './services/cache.service';
 import { SeedingService } from './services/seeding.service';
+import { EngagementService } from './services/engagement.service';
 
 import { FeedController } from './controllers/feed.controller';
 import { PostsController } from './controllers/posts.controller';
 import { SeedController } from './controllers/seed.controller';
 import { HealthController } from './controllers/health.controller';
+import { EngagementController } from './controllers/engagement.controller';
+import { CategoriesController } from './controllers/categories.controller';
 
 @Module({
   imports: [
@@ -48,6 +55,7 @@ import { HealthController } from './controllers/health.controller';
       { name: Post.name, schema: PostSchema },
       { name: User.name, schema: UserSchema },
       { name: Category.name, schema: CategorySchema },
+      { name: UserEngagement.name, schema: UserEngagementSchema },
     ]),
   ],
   controllers: [
@@ -55,6 +63,8 @@ import { HealthController } from './controllers/health.controller';
     FeedController,
     PostsController,
     SeedController,
+    EngagementController,
+    CategoriesController,
   ],
   providers: [
     PostService,
@@ -63,24 +73,37 @@ import { HealthController } from './controllers/health.controller';
     FeedService,
     CacheService,
     SeedingService,
+    EngagementService,
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // Apply rate limiting to GET endpoints (feed and health)
+    // Apply rate limiting to GET endpoints (feed, health, categories, post details)
     consumer
       .apply(RateLimitMiddleware)
       .forRoutes(
         { path: 'feed', method: RequestMethod.GET },
         { path: 'health', method: RequestMethod.GET },
+        { path: 'categories', method: RequestMethod.GET },
+        { path: 'posts/:id', method: RequestMethod.GET },
       );
 
-    // Apply optional authentication to feed endpoint
+    // Apply optional authentication to feed endpoint, post details, and categories
     consumer
       .apply(OptionalAuthMiddleware)
-      .forRoutes({ path: 'feed', method: RequestMethod.GET });
+      .forRoutes(
+        { path: 'feed', method: RequestMethod.GET },
+        { path: 'posts/:id', method: RequestMethod.GET },
+        { path: 'categories', method: RequestMethod.GET },
+      );
 
-    // Apply required authentication to posts endpoint (except seeding)
-    consumer.apply(RequiredAuthMiddleware).forRoutes('posts');
+    // Apply required authentication to posts endpoint (except seeding) and engagement endpoints
+    consumer
+      .apply(RequiredAuthMiddleware)
+      .forRoutes(
+        { path: 'posts', method: RequestMethod.POST },
+        { path: 'posts/:id/like', method: RequestMethod.PUT },
+        { path: 'posts/:id/dislike', method: RequestMethod.PUT },
+      );
   }
 }

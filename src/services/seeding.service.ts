@@ -129,7 +129,7 @@ export class SeedingService {
 
       const likeCount = this.generatePowerLawLikes();
       if (likeCount > 0) {
-        await this.postService.setLikeCount(post._id.toString(), likeCount);
+        await this.postService.setLikeCount(post.id.toString(), likeCount);
       }
 
       posts.push(post);

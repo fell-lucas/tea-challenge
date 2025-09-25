@@ -36,22 +36,13 @@ export class CategoryService {
     }
   }
 
-  async findAll(): Promise<CategoryDocument[]> {
+  async findAllByPopularity(): Promise<CategoryDocument[]> {
     try {
       return await this.categoryModel
         .find({ isActive: true })
-        .sort({ name: 1 });
+        .sort({ postCount: -1, name: 1 }); // Sort by postCount descending, then name ascending
     } catch (error) {
-      this.logger.error('Error finding categories:', error);
-      throw error;
-    }
-  }
-
-  async findByName(name: CategoryName): Promise<CategoryDocument | null> {
-    try {
-      return await this.categoryModel.findOne({ name, isActive: true });
-    } catch (error) {
-      this.logger.error(`Error finding category ${name}:`, error);
+      this.logger.error('Error finding categories by popularity:', error);
       throw error;
     }
   }
@@ -67,30 +58,6 @@ export class CategoryService {
         `Error incrementing post count for category ${categoryName}:`,
         error,
       );
-      throw error;
-    }
-  }
-
-  async decrementPostCount(categoryName: CategoryName): Promise<void> {
-    try {
-      await this.categoryModel.updateOne(
-        { name: categoryName, isActive: true },
-        { $inc: { postCount: -1 } },
-      );
-    } catch (error) {
-      this.logger.error(
-        `Error decrementing post count for category ${categoryName}:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
-  async getCategoryCount(): Promise<number> {
-    try {
-      return await this.categoryModel.countDocuments({ isActive: true });
-    } catch (error) {
-      this.logger.error('Error getting category count:', error);
       throw error;
     }
   }
