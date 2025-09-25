@@ -5,8 +5,8 @@ A NestJS-based relevance feed backend API with MongoDB and Redis integration, co
 ## 🚀 Features
 
 - Relevance-ranked post feed API (score automatically calculated with exponential freshness decay)
-- Rate limiting
-- Simple user authentication
+- Simple in-memory rate limiting 
+- Simple user authentication (X-User-Id header)
 - Data persistence with MongoDB
 - Data caching with Redis
 - Unit testing of the scoring algorithm
@@ -14,6 +14,7 @@ A NestJS-based relevance feed backend API with MongoDB and Redis integration, co
 - Like distribution (when seeding)
 - Cursor-based pagination based on post score + post ID
 - Health checks
+- Automated CI/CD pipeline with GitHub Actions
 
 ## 🛠️ Installation & Development Setup
 
