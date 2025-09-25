@@ -7,14 +7,6 @@ import {
 import type { Request, Response, NextFunction } from 'express';
 import { validateUUIDv7 } from '../dto/user-header.dto';
 
-declare global {
-  namespace Express {
-    interface Request {
-      userId?: string;
-    }
-  }
-}
-
 @Injectable()
 export class UserAuthMiddleware implements NestMiddleware {
   private readonly logger = new Logger(UserAuthMiddleware.name);

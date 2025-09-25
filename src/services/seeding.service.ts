@@ -5,6 +5,7 @@ import { CategoryService } from './category.service';
 import { FeedService } from './feed.service';
 import { v7 as uuidv7 } from 'uuid';
 import type { CategoryName } from 'src/entities/category.entity';
+import type { PostDetailsDto } from 'src/dto/post-details-response.dto';
 
 @Injectable()
 export class SeedingService {
@@ -72,9 +73,9 @@ export class SeedingService {
     count: number,
     userIds: string[],
     categories: CategoryName[],
-  ): Promise<any[]> {
+  ): Promise<PostDetailsDto[]> {
     this.logger.log(`Generating ${count} posts...`);
-    const posts: any[] = [];
+    const posts: PostDetailsDto[] = [];
 
     const titleTemplates = [
       'Breaking: {topic} Changes Everything',

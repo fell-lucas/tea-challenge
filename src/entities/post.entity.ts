@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document } from 'mongoose';
 import type { CategoryName } from './category.entity';
 
 export type PostDocument = Post & Document<string>;

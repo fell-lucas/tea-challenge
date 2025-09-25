@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, Types, type FilterQuery } from 'mongoose';
 import { Post, PostDocument } from '../entities/post.entity';
 import { CreatePostDto } from '../dto/create-post.dto';
 import { UserService } from './user.service';
@@ -40,7 +40,7 @@ export class PostService {
         userId,
         likeCount: 0,
         isActive: true,
-        tags: createPostDto.tags || [],
+        tags: createPostDto.tags ?? [],
       });
 
       const savedPost = await post.save();
@@ -83,7 +83,7 @@ export class PostService {
     cursor?: { score: number; postId: string },
   ): Promise<{ posts: PostDocument[]; totalCount: number }> {
     try {
-      const filter: any = { isActive: true };
+      const filter: FilterQuery<PostDocument> = { isActive: true };
 
       if (category) {
         filter.category = category;

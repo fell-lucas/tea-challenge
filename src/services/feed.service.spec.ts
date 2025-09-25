@@ -86,7 +86,7 @@ describe('FeedService', () => {
       });
 
       // Access the private method through reflection
-      const score = (service as any).calculateRelevanceScore(post);
+      const score = service.calculateRelevanceScore(post);
 
       // Current time: 15:00:00 (quantized to 15:00:00)
       // Creation time: 14:30:00
@@ -101,7 +101,7 @@ describe('FeedService', () => {
         createdAt: new Date('2025-01-01T10:00:00Z'), // 5 hours ago
       });
 
-      const score = (service as any).calculateRelevanceScore(post);
+      const score = service.calculateRelevanceScore(post);
 
       // Score = 50 * exp(-0.1 * 5) ≈ 30.33
       expect(score).toBeCloseTo(30.33, 1);
@@ -113,7 +113,7 @@ describe('FeedService', () => {
         createdAt: new Date('2025-01-01T14:00:00Z'),
       });
 
-      const score = (service as any).calculateRelevanceScore(post);
+      const score = service.calculateRelevanceScore(post);
 
       expect(score).toBe(0);
     });
@@ -124,7 +124,7 @@ describe('FeedService', () => {
         createdAt: new Date('2024-12-01T12:00:00Z'), // ~31 days ago
       });
 
-      const score = (service as any).calculateRelevanceScore(post);
+      const score = service.calculateRelevanceScore(post);
 
       // Very old posts should have very low scores due to exponential decay
       expect(score).toBeLessThan(1);
@@ -137,14 +137,14 @@ describe('FeedService', () => {
         createdAt: new Date('2025-01-01T14:15:00Z'),
       });
 
-      const score1 = (service as any).calculateRelevanceScore(post);
+      const score1 = service.calculateRelevanceScore(post);
 
       // Simulate time passing within the same hour
       jest
         .spyOn(Date, 'now')
         .mockReturnValue(new Date('2025-01-01T15:45:00Z').getTime());
 
-      const score2 = (service as any).calculateRelevanceScore(post);
+      const score2 = service.calculateRelevanceScore(post);
 
       // Scores should be identical due to quantization
       expect(score1).toBe(score2);
@@ -179,7 +179,7 @@ describe('FeedService', () => {
       const posts = createPostsWithScores();
       const query: FeedQueryDto = { limit: 2 };
 
-      const result = (service as any).applyCursorPagination(posts, query);
+      const result = service.applyCursorPagination(posts, query);
 
       expect(result.data).toHaveLength(2);
       expect(result.data[0]._id).toBe('post1');
@@ -193,11 +193,7 @@ describe('FeedService', () => {
       const query: FeedQueryDto = { limit: 2 };
       const cursor = { score: 80, postId: 'post2' };
 
-      const result = (service as any).applyCursorPagination(
-        posts,
-        query,
-        cursor,
-      );
+      const result = service.applyCursorPagination(posts, query, cursor);
 
       expect(result.data).toHaveLength(2);
       expect(result.data[0]._id).toBe('post3');
@@ -214,11 +210,7 @@ describe('FeedService', () => {
       const query: FeedQueryDto = { limit: 2 };
       const cursor = { score: 80, postId: 'post2' };
 
-      const result = (service as any).applyCursorPagination(
-        posts,
-        query,
-        cursor,
-      );
+      const result = service.applyCursorPagination(posts, query, cursor);
 
       // The algorithm finds post2 within tolerance (79.999 vs 80), so it starts after post2
       // But since post2's score changed, it might not find the exact match and fall back to score comparison
@@ -232,11 +224,7 @@ describe('FeedService', () => {
       const query: FeedQueryDto = { limit: 2 };
       const cursor = { score: 10, postId: 'nonexistent' };
 
-      const result = (service as any).applyCursorPagination(
-        posts,
-        query,
-        cursor,
-      );
+      const result = service.applyCursorPagination(posts, query, cursor);
 
       expect(result.data).toHaveLength(0);
       expect(result.nextCursor).toBeNull();
@@ -248,11 +236,7 @@ describe('FeedService', () => {
       const query: FeedQueryDto = { limit: 2 };
       const cursor = { score: 40, postId: 'post4' };
 
-      const result = (service as any).applyCursorPagination(
-        posts,
-        query,
-        cursor,
-      );
+      const result = service.applyCursorPagination(posts, query, cursor);
 
       expect(result.data).toHaveLength(1);
       expect(result.data[0]._id).toBe('post5');
@@ -266,11 +250,7 @@ describe('FeedService', () => {
       const query: FeedQueryDto = { limit: 2 };
       const cursor = { score: 80, postId: 'post2' };
 
-      const result = (service as any).applyCursorPagination(
-        posts,
-        query,
-        cursor,
-      );
+      const result = service.applyCursorPagination(posts, query, cursor);
 
       // When on second page, prevCursor should allow navigation to first page
       expect(result.prevCursor).toBe('100.1_000000000000000000000000');
@@ -376,10 +356,10 @@ describe('FeedService', () => {
 
       // Should not throw an error, but may return NaN or unexpected value
       expect(() => {
-        (service as any).calculateRelevanceScore(post);
+        service.calculateRelevanceScore(post);
       }).not.toThrow();
 
-      const score = (service as any).calculateRelevanceScore(post);
+      const score = service.calculateRelevanceScore(post);
       // With null createdAt, the calculation may result in NaN or unexpected behavior
       expect(typeof score).toBe('number');
     });
@@ -390,7 +370,7 @@ describe('FeedService', () => {
         createdAt: new Date('2025-01-01T14:00:00Z'),
       });
 
-      const score = (service as any).calculateRelevanceScore(post);
+      const score = service.calculateRelevanceScore(post);
 
       expect(score).toBeLessThanOrEqual(0);
       expect(1 / score).toBeLessThan(0); // This will be -Infinity for -0, which is < 0
@@ -402,7 +382,7 @@ describe('FeedService', () => {
         createdAt: new Date('2025-01-01T14:00:00Z'),
       });
 
-      const score = (service as any).calculateRelevanceScore(post);
+      const score = service.calculateRelevanceScore(post);
 
       expect(Number.isFinite(score)).toBe(true);
       expect(score).toBeGreaterThanOrEqual(0);
@@ -427,11 +407,7 @@ describe('FeedService', () => {
       const query: FeedQueryDto = { limit: 2 };
       const cursor = { score: 50, postId: 'post-b' };
 
-      const result = (service as any).applyCursorPagination(
-        posts,
-        query,
-        cursor,
-      );
+      const result = service.applyCursorPagination(posts, query, cursor);
 
       // Should handle tie-breaking by ID
       expect(result.data.length).toBeGreaterThanOrEqual(0);
@@ -452,11 +428,7 @@ describe('FeedService', () => {
       const query: FeedQueryDto = { limit: 2 };
       const cursor = { score: 90, postId: 'nonexistent' };
 
-      const result = (service as any).applyCursorPagination(
-        posts,
-        query,
-        cursor,
-      );
+      const result = service.applyCursorPagination(posts, query, cursor);
 
       // Should find the appropriate position based on score
       expect(result.data[0]._id).toBe('post2');
@@ -474,8 +446,8 @@ describe('FeedService', () => {
         createdAt: new Date('2025-01-01T14:00:00Z'),
       });
 
-      const score1 = (service as any).calculateRelevanceScore(post1);
-      const score2 = (service as any).calculateRelevanceScore(post2);
+      const score1 = service.calculateRelevanceScore(post1);
+      const score2 = service.calculateRelevanceScore(post2);
 
       expect(score2).toBeGreaterThan(score1);
       expect(score2 / score1).toBeCloseTo(2, 1); // Should be roughly double
@@ -491,8 +463,8 @@ describe('FeedService', () => {
         createdAt: new Date('2025-01-01T14:00:00Z'), // 1 hour ago
       });
 
-      const olderScore = (service as any).calculateRelevanceScore(olderPost);
-      const newerScore = (service as any).calculateRelevanceScore(newerPost);
+      const olderScore = service.calculateRelevanceScore(olderPost);
+      const newerScore = service.calculateRelevanceScore(newerPost);
 
       expect(newerScore).toBeGreaterThan(olderScore);
     });
@@ -517,9 +489,7 @@ describe('FeedService', () => {
         }), // 4h ago
       ];
 
-      const scores = posts.map((post) =>
-        (service as any).calculateRelevanceScore(post),
-      );
+      const scores = posts.map((post) => service.calculateRelevanceScore(post));
 
       // Each subsequent score should be smaller (exponential decay)
       for (let i = 1; i < scores.length; i++) {
@@ -546,7 +516,7 @@ describe('FeedService', () => {
 
       const scores = times.map((time) => {
         jest.spyOn(Date, 'now').mockReturnValue(time);
-        return (service as any).calculateRelevanceScore(post);
+        return service.calculateRelevanceScore(post);
       });
 
       // All scores should be identical due to quantization
@@ -567,9 +537,7 @@ describe('FeedService', () => {
         }),
       ];
 
-      const scores = posts.map((post) =>
-        (service as any).calculateRelevanceScore(post),
-      );
+      const scores = posts.map((post) => service.calculateRelevanceScore(post));
 
       expect(scores[0]).toBeCloseTo(100 * Math.exp(-0.1), 2);
       expect(scores[1]).toBeCloseTo(100 * Math.exp(0), 2); // Should be 100
@@ -578,22 +546,22 @@ describe('FeedService', () => {
 
   describe('Cache Key Generation', () => {
     it('should generate correct cache key for general feed', () => {
-      const key = (service as any).getCacheKey();
+      const key = service.getCacheKey();
       expect(key).toBe('posts::raw');
     });
 
     it('should generate correct cache key for category feed', () => {
-      const key = (service as any).getCacheKey('technology');
+      const key = service.getCacheKey('technology');
       expect(key).toBe('posts:technology:raw');
     });
 
     it('should return correct TTL for general feed', () => {
-      const ttl = (service as any).getCacheTTL();
+      const ttl = service.getCacheTTL();
       expect(ttl).toBe(300); // 5 minutes
     });
 
     it('should return correct TTL for category feed', () => {
-      const ttl = (service as any).getCacheTTL('technology');
+      const ttl = service.getCacheTTL('technology');
       expect(ttl).toBe(900); // 15 minutes
     });
   });

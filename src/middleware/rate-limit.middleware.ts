@@ -34,11 +34,9 @@ export class RateLimitMiddleware implements NestMiddleware {
     const windowStart = Math.floor(now / this.windowMs) * this.windowMs;
     const resetTime = windowStart + this.windowMs;
 
-    // Get or create rate limit entry for this IP
     let entry = this.rateLimitMap.get(clientIp);
 
     if (!entry || entry.resetTime <= now) {
-      // Create new entry or reset expired entry
       entry = {
         count: 0,
         resetTime,
@@ -46,10 +44,8 @@ export class RateLimitMiddleware implements NestMiddleware {
       this.rateLimitMap.set(clientIp, entry);
     }
 
-    // Increment request count
     entry.count++;
 
-    // Set rate limit headers
     res.setHeader('X-RateLimit-Limit', this.limit);
     res.setHeader(
       'X-RateLimit-Remaining',
@@ -57,7 +53,6 @@ export class RateLimitMiddleware implements NestMiddleware {
     );
     res.setHeader('X-RateLimit-Reset', Math.ceil(entry.resetTime / 1000));
 
-    // Check if limit exceeded
     if (entry.count > this.limit) {
       this.logger.warn(
         `Rate limit exceeded for IP ${clientIp}: ${entry.count}/${this.limit} requests`,
@@ -89,22 +84,17 @@ export class RateLimitMiddleware implements NestMiddleware {
   }
 
   private getClientIp(req: Request): string {
-    // Check for forwarded IP first (for proxy/load balancer scenarios)
     const forwarded = req.headers['x-forwarded-for'] as string;
     if (forwarded) {
       return forwarded.split(',')[0].trim();
     }
 
-    // Check for real IP header
     const realIp = req.headers['x-real-ip'] as string;
     if (realIp) {
       return realIp;
     }
 
-    // Fall back to connection remote address
-    return (
-      req.connection.remoteAddress || req.socket.remoteAddress || 'unknown'
-    );
+    return req.socket.remoteAddress ?? 'unknown';
   }
 
   private cleanupExpiredEntries(now: number): void {
@@ -121,27 +111,5 @@ export class RateLimitMiddleware implements NestMiddleware {
         `Cleaned up ${cleanedCount} expired rate limit entries`,
       );
     }
-  }
-
-  // Method to get current rate limit status for an IP (useful for testing)
-  getRateLimitStatus(
-    ip: string,
-  ): { count: number; limit: number; resetTime: number } | null {
-    const entry = this.rateLimitMap.get(ip);
-    if (!entry) {
-      return null;
-    }
-
-    return {
-      count: entry.count,
-      limit: this.limit,
-      resetTime: entry.resetTime,
-    };
-  }
-
-  // Method to reset rate limit for an IP (useful for testing)
-  resetRateLimit(ip: string): void {
-    this.rateLimitMap.delete(ip);
-    this.logger.debug(`Rate limit reset for IP ${ip}`);
   }
 }

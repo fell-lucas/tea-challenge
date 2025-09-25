@@ -15,7 +15,7 @@ export const getAppForTesting = async () => {
   );
 };
 
-beforeAll(async () => {
+beforeAll(() => {
   if (process.env.NODE_ENV !== 'test') {
     process.env.NODE_ENV = 'test';
   }

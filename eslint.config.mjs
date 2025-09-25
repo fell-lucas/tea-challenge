@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['eslint.config.mjs'],
+    ignores: ['eslint.config.mjs', 'test/*'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
@@ -37,7 +37,7 @@ export default tseslint.config(
       '@typescript-eslint/prefer-optional-chain': 'error',
       '@typescript-eslint/no-unused-vars': 'error',
       'prefer-const': 'error',
-      'no-var': 'error'
+      'no-var': 'error',
     },
   },
 );

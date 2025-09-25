@@ -10,7 +10,7 @@ import { HttpExceptionFilter } from './filters/http-exception.filter';
 
 export const modifyApp = (app: INestApplication) => {
   app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
+    origin: process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost:3000'],
     credentials: true,
   });
 
@@ -66,7 +66,7 @@ async function bootstrap() {
     SwaggerModule.setup('docs', app, document);
   }
 
-  const port = process.env.PORT || process.env.API_PORT || 3000;
+  const port = process.env.PORT ?? process.env.API_PORT ?? 3000;
 
   // Listen on all interfaces for Docker compatibility
   // Choose random port for e2e tests with Supertest

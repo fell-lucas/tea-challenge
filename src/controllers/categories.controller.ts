@@ -50,7 +50,7 @@ export class CategoriesController {
       const categories = await this.categoryService.findAllByPopularity();
 
       const categoryDtos: CategoryDto[] = categories.map((category) => ({
-        id: (category._id as any).toString(),
+        id: String(category._id),
         name: category.name,
         description: category.description,
         postCount: category.postCount,

@@ -56,13 +56,13 @@ export class FeedController {
       const feed = await this.feedService.getFeed(query);
 
       this.logger.log(
-        `Feed requested by user ${userId || 'anonymous'}, category: ${query.category || 'all'}, limit: ${query.limit || 20}`,
+        `Feed requested by user ${userId ?? 'anonymous'}, category: ${query.category ?? 'all'}, limit: ${query.limit ?? 20}`,
       );
 
       return feed;
     } catch (error) {
       this.logger.error(
-        `Error getting feed for user ${userId || 'anonymous'}:`,
+        `Error getting feed for user ${userId ?? 'anonymous'}:`,
         error,
       );
       throw error;

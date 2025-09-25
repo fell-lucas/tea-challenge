@@ -12,6 +12,11 @@ import {
 } from '../entities/user-engagement.entity';
 import { Post, PostDocument } from '../entities/post.entity';
 
+interface PostCounterUpdate {
+  likeCount?: number;
+  dislikeCount?: number;
+}
+
 @Injectable()
 export class EngagementService {
   constructor(
@@ -76,55 +81,47 @@ export class EngagementService {
       throw new NotFoundException('Post not found');
     }
 
-    try {
-      const existingEngagement = await this.userEngagementModel
-        .findOne({ userId, postId })
-        .exec();
+    const existingEngagement = await this.userEngagementModel
+      .findOne({ userId, postId })
+      .exec();
 
-      if (existingEngagement) {
-        // Idempotent behavior - if same engagement type, return success
-        if (existingEngagement.engagementType === engagementType) {
-          return {
-            postId,
-            engagementType,
-            success: true,
-          };
-        }
-
-        // Update existing engagement (transition from like to dislike or vice versa)
-        const oldEngagementType = existingEngagement.engagementType;
-        existingEngagement.engagementType = engagementType;
-
-        await existingEngagement.save();
-
-        await this.updatePostCounters(
-          postId,
-          oldEngagementType,
-          engagementType,
-        );
-      } else {
-        const newEngagement = new this.userEngagementModel({
-          userId,
+    if (existingEngagement) {
+      // Idempotent behavior - if same engagement type, return success
+      if (existingEngagement.engagementType === engagementType) {
+        return {
           postId,
           engagementType,
-        });
-        await newEngagement.save();
-
-        await this.updatePostCounters(postId, null, engagementType);
+          success: true,
+        };
       }
 
-      await this.postModel
-        .findByIdAndUpdate(postId, { engagementUpdatedAt: new Date() })
-        .exec();
+      // Update existing engagement (transition from like to dislike or vice versa)
+      const oldEngagementType = existingEngagement.engagementType;
+      existingEngagement.engagementType = engagementType;
 
-      return {
+      await existingEngagement.save();
+
+      await this.updatePostCounters(postId, oldEngagementType, engagementType);
+    } else {
+      const newEngagement = new this.userEngagementModel({
+        userId,
         postId,
         engagementType,
-        success: true,
-      };
-    } catch (error) {
-      throw error;
+      });
+      await newEngagement.save();
+
+      await this.updatePostCounters(postId, null, engagementType);
     }
+
+    await this.postModel
+      .findByIdAndUpdate(postId, { engagementUpdatedAt: new Date() })
+      .exec();
+
+    return {
+      postId,
+      engagementType,
+      success: true,
+    };
   }
 
   private async updatePostCounters(
@@ -141,11 +138,13 @@ export class EngagementService {
     }
 
     if (newEngagementType === EngagementType.LIKE) {
-      updateQuery.$inc = updateQuery.$inc || {};
-      updateQuery.$inc.likeCount = (updateQuery.$inc.likeCount || 0) + 1;
+      updateQuery.$inc ??= {} as PostCounterUpdate;
+      const incUpdate = updateQuery.$inc as PostCounterUpdate;
+      incUpdate.likeCount = (incUpdate.likeCount ?? 0) + 1;
     } else if (newEngagementType === EngagementType.DISLIKE) {
-      updateQuery.$inc = updateQuery.$inc || {};
-      updateQuery.$inc.dislikeCount = (updateQuery.$inc.dislikeCount || 0) + 1;
+      updateQuery.$inc ??= {} as PostCounterUpdate;
+      const incUpdate = updateQuery.$inc as PostCounterUpdate;
+      incUpdate.dislikeCount = (incUpdate.dislikeCount ?? 0) + 1;
     }
 
     if (updateQuery.$inc) {

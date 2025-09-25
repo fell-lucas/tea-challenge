@@ -28,7 +28,7 @@ export class CacheService {
     try {
       const value = await this.redis.get(key);
       if (value) {
-        return JSON.parse(value);
+        return JSON.parse(value) as T;
       }
       return null;
     } catch (error) {
@@ -37,7 +37,7 @@ export class CacheService {
     }
   }
 
-  async set(key: string, value: any, ttlSeconds?: number): Promise<void> {
+  async set<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
     try {
       const serialized = JSON.stringify(value);
       if (ttlSeconds) {
@@ -76,7 +76,7 @@ export class CacheService {
       await this.redis.ping();
       const responseTime = Date.now() - startTime;
       return { status: 'ok', responseTime };
-    } catch (error) {
+    } catch {
       const responseTime = Date.now() - startTime;
       return { status: 'error', responseTime };
     }

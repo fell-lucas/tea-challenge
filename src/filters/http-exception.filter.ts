@@ -8,6 +8,13 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
+// Interface for HTTP exception response objects
+interface HttpExceptionResponse {
+  message?: string | string[];
+  error?: string;
+  statusCode?: number;
+}
+
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
@@ -18,7 +25,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     let status: number;
-    let message: string | object;
+    let message: string;
     let error: string;
 
     if (exception instanceof HttpException) {
@@ -27,17 +34,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
-        error = HttpStatus[status] || 'Unknown Error';
+        error = HttpStatus[status] ?? 'Unknown Error';
       } else if (
         typeof exceptionResponse === 'object' &&
         exceptionResponse !== null
       ) {
-        const responseObj = exceptionResponse as any;
-        message = responseObj.message || responseObj.error || exception.message;
-        error = responseObj.error || HttpStatus[status] || 'Unknown Error';
+        const responseObj = exceptionResponse as HttpExceptionResponse;
+        const responseMessage = responseObj.message;
+        message = Array.isArray(responseMessage)
+          ? responseMessage.join(', ')
+          : (responseMessage ?? responseObj.error ?? exception.message);
+        error = responseObj.error ?? HttpStatus[status] ?? 'Unknown Error';
       } else {
         message = exception.message;
-        error = HttpStatus[status] || 'Unknown Error';
+        error = HttpStatus[status] ?? 'Unknown Error';
       }
     } else if (exception instanceof Error) {
       // Handle non-HTTP exceptions
@@ -78,7 +88,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       );
     } else if (status >= 400) {
       this.logger.warn(
-        `HTTP ${status} Client Error: ${request.method} ${request.url} - ${message}`,
+        `HTTP ${status} Client Error: ${request.method} ${request.url} - ${String(message)}`,
       );
     }
 

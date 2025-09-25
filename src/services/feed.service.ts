@@ -13,7 +13,17 @@ import {
   FeedPostDto,
   truncateContent,
 } from '../dto/feed-response.dto';
-import { PostDocument, type Post } from '../entities/post.entity';
+import { type Post } from '../entities/post.entity';
+
+interface CachedPostData {
+  posts: (Post & { _id: string })[];
+  totalCount: number;
+}
+
+interface PostWithScore extends Post {
+  _id: string;
+  relevanceScore: number;
+}
 
 @Injectable()
 export class FeedService {
@@ -38,17 +48,19 @@ export class FeedService {
 
       // Try to get from cache first
       const cacheKey = this.getCacheKey(query.category);
-      let posts: PostDocument[] = [];
+      let posts: (Post & { _id: string })[] = [];
       let totalCount = 0;
 
-      const cachedData = (await this.cacheService.get(cacheKey)) as any;
+      const cachedData = await this.cacheService.get<CachedPostData>(cacheKey);
       if (cachedData) {
         cacheHit = true;
         posts = cachedData.posts;
         totalCount = cachedData.totalCount;
       } else {
         const result = await this.postService.findAll(query.category, 1000); // Get more for sorting
-        posts = result.posts.map((post) => post.toObject());
+        posts = result.posts.map(
+          (post) => post.toObject() as Post & { _id: string },
+        );
         totalCount = result.totalCount;
 
         // Cache the raw data
@@ -60,7 +72,7 @@ export class FeedService {
       }
 
       // Calculate relevance scores and sort
-      const postsWithScores = posts
+      const postsWithScores: PostWithScore[] = posts
         .map((post) => ({
           ...post,
           relevanceScore: this.calculateRelevanceScore(post),
@@ -83,7 +95,7 @@ export class FeedService {
         pagination: {
           nextCursor: paginatedResult.nextCursor,
           prevCursor: paginatedResult.prevCursor,
-          limit: query.limit || 20,
+          limit: query.limit ?? 20,
           totalCount,
         },
         meta: {
@@ -99,7 +111,7 @@ export class FeedService {
     }
   }
 
-  private calculateRelevanceScore(post: PostDocument): number {
+  calculateRelevanceScore(post: Post & { _id: string }): number {
     // Quantize time to the nearest hour to ensure consistent scores within the same hour
     // This prevents cursor pagination issues caused by constantly changing scores
     // Using the hour is just an example, the quantization interval can be adjusted
@@ -113,12 +125,12 @@ export class FeedService {
     return post.likeCount * decayFactor;
   }
 
-  private applyCursorPagination(
-    posts: (Post & { _id: string })[],
+  applyCursorPagination(
+    posts: PostWithScore[],
     query: FeedQueryDto,
     cursor?: ParsedCursor,
   ) {
-    const limit = query.limit || 20;
+    const limit = query.limit ?? 20;
     let startIndex = 0;
 
     if (cursor) {
@@ -201,15 +213,15 @@ export class FeedService {
       createdAt: new Date(post.createdAt).toISOString(),
       likeCount: post.likeCount,
       relevanceScore: Math.round(post.relevanceScore * 10) / 10, // Round to 1 decimal
-      tags: post.tags || [],
+      tags: post.tags ?? [],
     };
   }
 
-  private getCacheKey(category?: string): string {
+  getCacheKey(category?: string): string {
     return category ? `posts:${category}:raw` : 'posts::raw';
   }
 
-  private getCacheTTL(category?: string): number {
+  getCacheTTL(category?: string): number {
     return category ? 15 * 60 : 5 * 60; // 15 min for category, 5 min for general
   }
 
