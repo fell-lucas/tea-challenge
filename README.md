@@ -42,6 +42,8 @@ I recommend using Swagger to play with the API and its various endpoints. Everyt
 Run tests with `pnpm test`
 Run e2e tests with `pnpm test:e2e`
 
+Use `./scripts/dev.sh clean` to clean up the project's Docker resources when you're done.
+
 ## 🚀 Production
 
 Use the automated script:
