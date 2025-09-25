@@ -259,8 +259,16 @@ describe('Feed API (e2e)', () => {
         .get('/api/v1/feed?cursor=invalid-cursor')
         .expect(400)
         .expect((res) => {
-          expect(res.body.message[0]).toContain('Cursor must be in format');
+          expect(res.body.message).toContain('Cursor must be in format');
         });
+    });
+
+    it('should handle null cursor parameter gracefully', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/feed?cursor=null')
+        .expect(400); // Should fail validation
+
+      expect(response.body.statusCode).toBe(400);
     });
   });
 
@@ -646,18 +654,45 @@ describe('Feed API (e2e)', () => {
         .set('X-Skip-Rate-Limit', 'true')
         .expect(200);
 
-      const cursor = initialResponse.body.pagination.nextCursor;
+      const postsToCreate = Math.max(
+        100 - initialResponse.body.pagination.totalCount,
+        50,
+      );
+
+      for (let i = 0; i < postsToCreate; i++) {
+        await request(app.getHttpServer())
+          .post('/api/v1/posts')
+          .set('X-User-Id', validUserId)
+          .send({
+            title: `Performance Test Post ${i + 1}`,
+            content: `This is test post ${i + 1} for pagination performance testing. It contains enough content to make the test realistic.`,
+            category: [
+              'technology',
+              'science',
+              'business',
+              'health',
+              'lifestyle',
+            ][i % 5],
+          })
+          .expect(201);
+      }
+
+      let currentCursor = initialResponse.body.pagination.nextCursor;
 
       for (let i = 0; i < iterations; i++) {
         const startTime = Date.now();
 
-        await request(app.getHttpServer())
-          .get(`/api/v1/feed?limit=20&cursor=${cursor}`)
+        const response = await request(app.getHttpServer())
+          .get(`/api/v1/feed?limit=20&cursor=${currentCursor}`)
           .set('X-Skip-Rate-Limit', 'true')
           .expect(200);
 
         const endTime = Date.now();
         responseTimes.push(endTime - startTime);
+
+        if (response.body.pagination.nextCursor) {
+          currentCursor = response.body.pagination.nextCursor;
+        }
       }
 
       responseTimes.sort((a, b) => a - b);
